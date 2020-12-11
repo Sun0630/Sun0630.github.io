@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+    <!-- title -->
+
+
+
+
+<!-- keywords -->
+
+
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" >
+    <meta name="author" content="Sun xin">
+    <meta name="renderer" content="webkit">
+    <meta name="copyright" content="Sun xin">
+    
+    <meta name="keywords" content="hexo,hexo-theme,hexo-blog">
+    
+    <meta name="description" content="Don't lose faith.">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <title>Kotlin协程实现分析 · sunxin&#39;s Studio</title>
+    <style type="text/css">
+    @font-face {
+        font-family: 'Oswald-Regular';
+        src: url("/font/Oswald-Regular.ttf");
+    }
+
+    body {
+        margin: 0;
+    }
+
+    header,
+    footer,
+    .back-top,
+    .sidebar,
+    .container,
+    .site-intro-meta,
+    .toc-wrapper {
+        display: none;
+    }
+
+    .site-intro {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        /* height: 50vh; */
+        overflow: hidden;
+    }
+
+    .site-intro-placeholder {
+        position: absolute;
+        z-index: -2;
+        top: 0;
+        left: 0;
+        width: calc(100% + 300px);
+        height: 100%;
+        background: repeating-linear-gradient(-45deg, #444 0, #444 80px, #333 80px, #333 160px);
+        background-position: center center;
+        transform: translate3d(-226px, 0, 0);
+        animation: gradient-move 2.5s ease-out 0s infinite;
+    }
+
+    @keyframes gradient-move {
+        0% {
+            transform: translate3d(-226px, 0, 0);
+        }
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+</style>
+
+    <link rel="preload" href= "/css/style.css?v=20180824" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="stylesheet" href= "/css/mobile.css?v=20180824" media="(max-width: 980px)">
+    
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    
+    <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
+/* This file is meant as a standalone workflow for
+- testing support for link[rel=preload]
+- enabling async CSS loading in browsers that do not support rel=preload
+- applying rel preload css once loaded, whether supported or not.
+*/ -->
+<script>
+(function( w ){
+	"use strict";
+	// rel=preload support test
+	if( !w.loadCSS ){
+		w.loadCSS = function(){};
+	}
+	// define on the loadCSS obj
+	var rp = loadCSS.relpreload = {};
+	// rel=preload feature support test
+	// runs once and returns a function for compat purposes
+	rp.support = (function(){
+		var ret;
+		try {
+			ret = w.document.createElement( "link" ).relList.supports( "preload" );
+		} catch (e) {
+			ret = false;
+		}
+		return function(){
+			return ret;
+		};
+	})();
+
+	// if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+	// then change that media back to its intended value on load
+	rp.bindMediaToggle = function( link ){
+		// remember existing media attr for ultimate state, or default to 'all'
+		var finalMedia = link.media || "all";
+
+		function enableStylesheet(){
+			link.media = finalMedia;
+		}
+
+		// bind load handlers to enable media
+		if( link.addEventListener ){
+			link.addEventListener( "load", enableStylesheet );
+		} else if( link.attachEvent ){
+			link.attachEvent( "onload", enableStylesheet );
+		}
+
+		// Set rel and non-applicable media type to start an async request
+		// note: timeout allows this to happen async to let rendering continue in IE
+		setTimeout(function(){
+			link.rel = "stylesheet";
+			link.media = "only x";
+		});
+		// also enable media after 3 seconds,
+		// which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+		setTimeout( enableStylesheet, 3000 );
+	};
+
+	// loop through link elements in DOM
+	rp.poly = function(){
+		// double check this to prevent external calls from running
+		if( rp.support() ){
+			return;
+		}
+		var links = w.document.getElementsByTagName( "link" );
+		for( var i = 0; i < links.length; i++ ){
+			var link = links[ i ];
+			// qualify links to those with rel=preload and as=style attrs
+			if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+				// prevent rerunning on link
+				link.setAttribute( "data-loadcss", true );
+				// bind listeners to toggle media back
+				rp.bindMediaToggle( link );
+			}
+		}
+	};
+
+	// if unsupported, run the polyfill
+	if( !rp.support() ){
+		// run once at least
+		rp.poly();
+
+		// rerun poly on an interval until onload
+		var run = w.setInterval( rp.poly, 500 );
+		if( w.addEventListener ){
+			w.addEventListener( "load", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		} else if( w.attachEvent ){
+			w.attachEvent( "onload", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		}
+	}
+
+
+	// commonjs
+	if( typeof exports !== "undefined" ){
+		exports.loadCSS = loadCSS;
+	}
+	else {
+		w.loadCSS = loadCSS;
+	}
+}( typeof global !== "undefined" ? global : this ) );
+</script>
+
+    <link rel="icon" href= "/assets/me.ico" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js" as="script" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" as="script" />
+    <link rel="preload" href="/scripts/main.js" as="script" />
+    <link rel="preload" as="font" href="/font/Oswald-Regular.ttf" crossorigin>
+    <link rel="preload" as="font" href="https://at.alicdn.com/t/font_327081_1dta1rlogw17zaor.woff" crossorigin>
+    
+    <!-- fancybox -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script>
+    <!-- 百度统计  -->
+    
+    <!-- 谷歌统计  -->
+    
+</head>
+
+    
+        <body class="post-body">
+    
+    
+<header class="header">
+
+    <div class="read-progress"></div>
+    <div class="header-sidebar-menu">&#xe775;</div>
+    <!-- post页的toggle banner  -->
+    
+    <div class="banner">
+            <div class="blog-title">
+                <a href="/" >sunxin&#39;s Studio.</a>
+            </div>
+            <div class="post-title">
+                <a href="#" class="post-name">Kotlin协程实现分析</a>
+            </div>
+    </div>
+    
+    <a class="home-link" href=/>sunxin's Studio.</a>
+</header>
+    <div class="wrapper">
+        <div class="site-intro" style="
+
+
+
+
+
+
+
+height:50vh;
+">
+    
+    <!-- 主页  -->
+    
+    
+    <!-- 404页  -->
+            
+    <div class="site-intro-placeholder"></div>
+    <div class="site-intro-img" style="background-image: url(/intro/post-bg.jpg)"></div>
+    <div class="site-intro-meta">
+        <!-- 标题  -->
+        <h1 class="intro-title">
+            <!-- 主页  -->
+            
+            Kotlin协程实现分析
+            <!-- 404 -->
+            
+        </h1>
+        <!-- 副标题 -->
+        <p class="intro-subtitle">
+            <!-- 主页副标题  -->
+            
+            
+            <!-- 404 -->
+            
+        </p>
+        <!-- 文章页meta -->
+        
+            <div class="post-intros">
+                <!-- 文章页标签  -->
+                
+                    <div class= post-intro-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "协程">协程</a>
+    
+</div>
+                
+                
+                    <div class="post-intro-read">
+                        <span>字数统计: <span class="post-count word-count">1.6k</span>阅读时长: <span class="post-count reading-time">7 min</span></span>
+                    </div>
+                
+                <div class="post-intro-meta">
+                    <span class="post-intro-calander iconfont-archer">&#xe676;</span>
+                    <span class="post-intro-time">2020/12/11</span>
+                    
+                    <span id="busuanzi_container_page_pv" class="busuanzi-pv">
+                        <span class="iconfont-archer">&#xe602;</span>
+                        <span id="busuanzi_value_page_pv"></span>
+                    </span>
+                    
+                    <span class="shareWrapper">
+                        <span class="iconfont-archer shareIcon">&#xe71d;</span>
+                        <span class="shareText">Share</span>
+                        <ul class="shareList">
+                            <li class="iconfont-archer share-qr" data-type="qr">&#xe75b;
+                                <div class="share-qrcode"></div>
+                            </li>
+                            <li class="iconfont-archer" data-type="weibo">&#xe619;</li>
+                            <li class="iconfont-archer" data-type="qzone">&#xe62e;</li>
+                            <li class="iconfont-archer" data-type="twitter">&#xe634;</li>
+                            <li class="iconfont-archer" data-type="facebook">&#xe67a;</li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+        
+    </div>
+</div>
+        <script>
+ 
+  // get user agent
+  var browser = {
+    versions: function () {
+      var u = window.navigator.userAgent;
+      return {
+        userAgent: u,
+        trident: u.indexOf('Trident') > -1, //IE内核
+        presto: u.indexOf('Presto') > -1, //opera内核
+        webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+        gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+        mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+        ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+        android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或者uc浏览器
+        iPhone: u.indexOf('iPhone') > -1 || u.indexOf('Mac') > -1, //是否为iPhone或者安卓QQ浏览器
+        iPad: u.indexOf('iPad') > -1, //是否为iPad
+        webApp: u.indexOf('Safari') == -1, //是否为web应用程序，没有头部与底部
+        weixin: u.indexOf('MicroMessenger') == -1, //是否为微信浏览器
+        uc: u.indexOf('UCBrowser') > -1 //是否为android下的UC浏览器
+      };
+    }()
+  }
+  console.log("userAgent:" + browser.versions.userAgent);
+
+  // callback
+  function fontLoaded() {
+    console.log('font loaded');
+    if (document.getElementsByClassName('site-intro-meta')) {
+      document.getElementsByClassName('intro-title')[0].classList.add('intro-fade-in');
+      document.getElementsByClassName('intro-subtitle')[0].classList.add('intro-fade-in');
+      var postIntros = document.getElementsByClassName('post-intros')[0]
+      if (postIntros) {
+        postIntros.classList.add('post-fade-in');
+      }
+    }
+  }
+
+  // UC不支持跨域，所以直接显示
+  function asyncCb(){
+    if (browser.versions.uc) {
+      console.log("UCBrowser");
+      fontLoaded();
+    } else {
+      WebFont.load({
+        custom: {
+          families: ['Oswald-Regular']
+        },
+        loading: function () {  //所有字体开始加载
+          // console.log('loading');
+        },
+        active: function () {  //所有字体已渲染
+          fontLoaded();
+        },
+        inactive: function () { //字体预加载失败，无效字体或浏览器不支持加载
+          console.log('inactive: timeout');
+          fontLoaded();
+        },
+        timeout: 5000 // Set the timeout to two seconds
+      });
+    }
+  }
+
+  function asyncErr(){
+    console.warn('script load from CDN failed, will load local script')
+  }
+
+  // load webfont-loader async, and add callback function
+  function async(u, cb, err) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (cb) { o.addEventListener('load', function (e) { cb(null, e); }, false); }
+    if (err) { o.addEventListener('error', function (e) { err(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+
+  var asyncLoadWithFallBack = function(arr, success, reject) {
+      var currReject = function(){
+        reject()
+        arr.shift()
+        if(arr.length)
+          async(arr[0], success, currReject)
+        }
+
+      async(arr[0], success, currReject)
+  }
+
+  asyncLoadWithFallBack([
+    "https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js", 
+    "https://cdn.bootcss.com/webfont/1.6.28/webfontloader.js",
+    "/lib/webfontloader.min.js"
+  ], asyncCb, asyncErr)
+</script>        
+        <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
+        <div class="container container-unloaded">
+            <main class="main post-page">
+    <article class="article-entry">
+        <h1 id="Kotlin协程实现分析"><a href="#Kotlin协程实现分析" class="headerlink" title="Kotlin协程实现分析"></a>Kotlin协程实现分析</h1><ul>
+<li>协程的创建与启动</li>
+<li>协程调度器都有哪些，分别表示什么含义</li>
+<li>delay既然是IO异步任务，是怎么做到延迟协程的代码向下执行的</li>
+<li>suspend关键字的作用</li>
+<li>并发流程控制 async  await</li>
+<li>协程挂起与恢复原理逆向剖析</li>
+<li>如何让一个普通函数成为一个挂起函数，即让调用方以一个同步的方式拿到调用结果</li>
+</ul>
+<h1 id="协程的创建与启动"><a href="#协程的创建与启动" class="headerlink" title="协程的创建与启动"></a>协程的创建与启动</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">GlobalScope.launch(Dispatchers.Unconfined) &#123;</span><br><span class="line">    Log.e(TAG, &quot;coroutine is running&quot;)</span><br><span class="line">    val result1 = request1()</span><br><span class="line">    val result2 = request2(result1)</span><br><span class="line">    val result3 = request3(result2)</span><br><span class="line"></span><br><span class="line">    updateUI(result3)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>启动一个协程可以使用<code>launch</code> 或 <code>async</code></p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">fun</span> CoroutineScope.<span class="title">launch</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">     <span class="comment">// 协程调度器  Dispatchers.Unconfined 当前线程</span></span></span></span><br><span class="line"><span class="function"><span class="params">    context: <span class="type">CoroutineContext</span> = EmptyCoroutineContext,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="comment">// 协程的启动模式</span></span></span></span><br><span class="line"><span class="function"><span class="params">    start: <span class="type">CoroutineStart</span> = CoroutineStart.DEFAULT,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="comment">// 传入的闭包代码块</span></span></span></span><br><span class="line"><span class="function"><span class="params">    block: <span class="type">suspend</span> <span class="type">CoroutineScope</span>.()</span></span> -&gt; <span class="built_in">Unit</span></span><br><span class="line">): Job &#123;</span><br><span class="line">    <span class="comment">// 包装一层</span></span><br><span class="line">    <span class="keyword">val</span> newContext = newCoroutineContext(context)</span><br><span class="line">    <span class="comment">// 判断启动模式</span></span><br><span class="line">    <span class="keyword">val</span> coroutine = <span class="keyword">if</span> (start.isLazy)</span><br><span class="line">        <span class="comment">// 懒加载</span></span><br><span class="line">        LazyStandaloneCoroutine(newContext, block) <span class="keyword">else</span></span><br><span class="line">        <span class="comment">// 非懒加载</span></span><br><span class="line">        StandaloneCoroutine(newContext, active = <span class="literal">true</span>)</span><br><span class="line">    <span class="comment">// 根据启动模式，执行</span></span><br><span class="line">    coroutine.start(start, coroutine, block)</span><br><span class="line">    <span class="keyword">return</span> coroutine</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// AbstractCoroutine.kt  </span></span><br><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">fun</span> <span class="type">&lt;R&gt;</span> <span class="title">start</span><span class="params">(start: <span class="type">CoroutineStart</span>, receiver: <span class="type">R</span>, block: <span class="type">suspend</span> <span class="type">R</span>.()</span></span> -&gt; T) &#123;</span><br><span class="line">    initParentJob()</span><br><span class="line">    <span class="comment">// 会执行到 CoroutineStart 的invoke 方法</span></span><br><span class="line">    start(block, receiver, <span class="keyword">this</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//CoroutineStart.kt</span></span><br><span class="line"> <span class="comment">// block: 待执行代码块    completion: 编译器生成的回调</span></span><br><span class="line"> <span class="keyword">public</span> <span class="keyword">operator</span> <span class="function"><span class="keyword">fun</span> <span class="type">&lt;T&gt;</span> <span class="title">invoke</span><span class="params">(block: <span class="type">suspend</span> ()</span></span> -&gt; T, receiver: R, completion: Continuation&lt;T&gt;) =</span><br><span class="line">        <span class="comment">// 判断协程启动模式</span></span><br><span class="line">        <span class="keyword">when</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">            <span class="comment">// 默认  ，可随时取消的</span></span><br><span class="line">            CoroutineStart.DEFAULT -&gt;block.startCoroutineCancellable(receiver, completion)</span><br><span class="line">            <span class="comment">// 自动</span></span><br><span class="line">            CoroutineStart.ATOMIC -&gt; block.startCoroutine(receiver, completion)</span><br><span class="line">            <span class="comment">// 不指定</span></span><br><span class="line">            CoroutineStart.UNDISPATCHED -&gt;block.startCoroutineUndispatched(receiver, completion)</span><br><span class="line">            <span class="comment">// 延迟启动</span></span><br><span class="line">            CoroutineStart.LAZY -&gt; <span class="built_in">Unit</span> <span class="comment">// will start lazily</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Cancellable.kt</span></span><br><span class="line"><span class="keyword">internal</span> <span class="function"><span class="keyword">fun</span> <span class="type">&lt;R, T&gt;</span> <span class="params">(suspend (R)</span></span> -&gt; T).startCoroutineCancellable(receiver: R, completion: Continuation&lt;T&gt;) =</span><br><span class="line">    runSafely(completion) &#123;</span><br><span class="line">        createCoroutineUnintercepted(receiver, completion).intercepted().resumeCancellable(<span class="built_in">Unit</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Dispatched.kt</span></span><br><span class="line"><span class="keyword">internal</span> <span class="function"><span class="keyword">fun</span> <span class="type">&lt;T&gt;</span> Continuation<span class="type">&lt;T&gt;</span>.<span class="title">resumeCancellable</span><span class="params">(value: <span class="type">T</span>)</span></span> = <span class="keyword">when</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">    <span class="keyword">is</span> DispatchedContinuation -&gt; resumeCancellable(value)</span><br><span class="line">    <span class="keyword">else</span> -&gt; resume(value)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Continuation 的扩展函数，恢复线程使用，最终会回调执行到resumeWith，然后执行到invokeSuspend</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">inline</span> <span class="function"><span class="keyword">fun</span> <span class="type">&lt;T&gt;</span> Continuation<span class="type">&lt;T&gt;</span>.<span class="title">resume</span><span class="params">(value: <span class="type">T</span>)</span></span>: <span class="built_in">Unit</span> =</span><br><span class="line">    resumeWith(Result.success(value))</span><br></pre></td></tr></table></figure>
+<h2 id="CoroutineContext"><a href="#CoroutineContext" class="headerlink" title="CoroutineContext"></a>CoroutineContext</h2><blockquote>
+<p>可以理解为协程的上下文，是一种key-value数据结构</p>
+</blockquote>
+<h2 id="CoroutineStart"><a href="#CoroutineStart" class="headerlink" title="CoroutineStart"></a>CoroutineStart</h2><p>协程启动模式</p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CoroutineStart.DEFAULT</td>
+<td>默认模式，创建即启动，可随时取消</td>
+</tr>
+<tr>
+<td>CoroutineStart.LAZY</td>
+<td>延迟启动模式，只有调用start方法才能启动</td>
+</tr>
+<tr>
+<td>CoroutineStart.ATOMIC</td>
+<td>自动模式，创建即启动，启动前不可取消</td>
+</tr>
+</tbody>
+</table>
+<h1 id="协程调度器"><a href="#协程调度器" class="headerlink" title="协程调度器"></a>协程调度器</h1><p><img src="https://cdn.nlark.com/yuque/__puml/bd294363ce2a86110c33cb2c5ce84dab.svg" alt="img"></p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dispatcher.IO</td>
+<td>指定协程运行的线程为IO线程</td>
+</tr>
+<tr>
+<td>Dispatcher.Main</td>
+<td>指定协程运行的线程为主线程</td>
+</tr>
+<tr>
+<td>Dispatcher.Default</td>
+<td>默认的，启动协程时会启动一个线程</td>
+</tr>
+<tr>
+<td>Dispatcher.Undefined</td>
+<td>不指定，就是在当前线程执行，协程恢复后运行的线程取决于挂起时的线程</td>
+</tr>
+</tbody>
+</table>
+<h1 id="协程挂起与恢复原理"><a href="#协程挂起与恢复原理" class="headerlink" title="协程挂起与恢复原理"></a>协程挂起与恢复原理</h1><blockquote>
+<p>挂起就是这个协程从当前执行他的线程上脱离。</p>
+</blockquote>
+<ul>
+<li>协程挂起的本质： 就是方法的挂起<strong>return</strong></li>
+<li>协程恢复的本质： callback的回调（Continution）</li>
+</ul>
+<h2 id="挂起函数"><a href="#挂起函数" class="headerlink" title="挂起函数"></a>挂起函数</h2><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">suspend <span class="function"><span class="keyword">fun</span> <span class="title">request1</span><span class="params">()</span></span>: String &#123;</span><br><span class="line">    delay(<span class="number">2</span> * <span class="number">1000</span>)  <span class="comment">//不会暂停线程,但会暂停当前所在的协程</span></span><br><span class="line">    Log.e(TAG, <span class="string">"request1 work on <span class="subst">$&#123;Thread.currentThread().name&#125;</span>"</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="string">"result from request1"</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>将协程suspend方法通过反编译成Java代码</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//1. 被标记为suspend的函数会被编译器自动添加 Continuation 参数，实现类是ContinuationImpl</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> Object request1(<span class="meta">@NotNull</span> Continuation $completion) &#123;</span><br><span class="line">    Object $continuation;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 这里将 $completion 传入</span></span><br><span class="line">    $continuation = new ContinuationImpl($completion) &#123;</span><br><span class="line">        <span class="comment">// $FF: synthetic field</span></span><br><span class="line">        Object result;</span><br><span class="line">        int label; <span class="comment">// 默认 0</span></span><br><span class="line">        Object L$<span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 2. 当协程恢复的会执行invokeSuspend</span></span><br><span class="line">        <span class="meta">@Nullable</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">final</span> Object invokeSuspend(<span class="meta">@NotNull</span> Object $result) &#123;</span><br><span class="line">            <span class="keyword">this</span>.result = $result;</span><br><span class="line">            <span class="keyword">this</span>.label |= Integer.MIN_VALUE;</span><br><span class="line">            <span class="comment">// 3. 再递归调用自己</span></span><br><span class="line">            <span class="keyword">return</span> CoroutineScene.<span class="keyword">this</span>.request1(<span class="keyword">this</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Object $result = ((&lt;undefinedtype&gt;)$continuation).result;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 4. 挂起函数标记 CoroutineSingletons.COROUTINE_SUSPENDED</span></span><br><span class="line">Object var6 = IntrinsicsKt.getCOROUTINE_SUSPENDED();</span><br><span class="line"></span><br><span class="line">switch(((&lt;undefinedtype&gt;)$continuation).label) &#123;</span><br><span class="line">    <span class="comment">// 判断label为0</span></span><br><span class="line">    case <span class="number">0</span>:</span><br><span class="line">        ResultKt.throwOnFailure($result);</span><br><span class="line">        ((&lt;undefinedtype&gt;)$continuation).L$<span class="number">0</span> = <span class="keyword">this</span>;</span><br><span class="line">        <span class="comment">// label赋值为1</span></span><br><span class="line">        ((&lt;undefinedtype&gt;)$continuation).label = <span class="number">1</span>;</span><br><span class="line">        <span class="comment">// 判断delay的返回值 == var6 也即是CoroutineSingletons.COROUTINE_SUSPENDED 的时候return，执行挂起</span></span><br><span class="line">        <span class="comment">// 当delay执行完成之后，会回调continuation的invokeSuspend方法，再次调用</span></span><br><span class="line">        <span class="keyword">if</span> (DelayKt.delay(<span class="number">2000</span>L, (Continuation)$continuation) == var6) &#123;</span><br><span class="line">            <span class="comment">// 返回挂起标记，直接return了，这里表示挂起了，下面不再执行</span></span><br><span class="line">            <span class="keyword">return</span> var6;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    case <span class="number">1</span>:</span><br><span class="line">        CoroutineScene var7 = (CoroutineScene)((&lt;undefinedtype&gt;)$continuation).L$<span class="number">0</span>;</span><br><span class="line">        ResultKt.throwOnFailure($result);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">throw</span> new IllegalStateException(<span class="string">"call to 'resume' before 'invoke' with coroutine"</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">String var2 = <span class="string">"after delay"</span>;</span><br><span class="line">boolean var3 = <span class="literal">false</span>;</span><br><span class="line">System.<span class="keyword">out</span>.println(var2);</span><br><span class="line"><span class="keyword">return</span> <span class="string">"result from request1"</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>看DelayKt.delay 的返回值得时候，需要找到DelayKt的class文件并反编译成java源码</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// DelayKt.java</span></span><br><span class="line"><span class="comment">// 传入 Continuation</span></span><br><span class="line"><span class="keyword">public</span> static <span class="keyword">final</span> Object delay(long timeMillis, <span class="meta">@NotNull</span> Continuation $completion) &#123;</span><br><span class="line">    <span class="keyword">if</span> (timeMillis &lt;= <span class="number">0</span>L) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">Unit</span>.INSTANCE;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        int $i$f$suspendCancellableCoroutine = <span class="literal">false</span>;</span><br><span class="line">        int var5 = <span class="literal">false</span>;</span><br><span class="line">        CancellableContinuationImpl cancellable$iv = new CancellableContinuationImpl(IntrinsicsKt.intercepted($completion), <span class="number">1</span>);</span><br><span class="line">        CancellableContinuation cont = (CancellableContinuation)cancellable$iv;</span><br><span class="line">        int var8 = <span class="literal">false</span>;</span><br><span class="line">        getDelay(cont.getContext()).scheduleResumeAfterDelay(timeMillis, cont);</span><br><span class="line">        <span class="comment">// 看下getResult方法</span></span><br><span class="line">        Object var10000 = cancellable$iv.getResult();</span><br><span class="line">        <span class="keyword">if</span> (var10000 == IntrinsicsKt.getCOROUTINE_SUSPENDED()) &#123;</span><br><span class="line">            DebugProbesKt.probeCoroutineSuspended($completion);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> var10000;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>看下协程时怎么改变方法的状态的</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">internal</span> <span class="function"><span class="keyword">fun</span> <span class="title">getResult</span><span class="params">()</span></span>: Any? &#123;</span><br><span class="line">    installParentCancellationHandler()</span><br><span class="line">    <span class="comment">// 如果trySuspend返回true，就返回协程挂起标记</span></span><br><span class="line">    <span class="keyword">if</span> (trySuspend()) <span class="keyword">return</span> COROUTINE_SUSPENDED</span><br><span class="line">    <span class="comment">// otherwise, onCompletionInternal was already invoked &amp; invoked tryResume, and the result is in the state</span></span><br><span class="line">    <span class="keyword">val</span> state = <span class="keyword">this</span>.state</span><br><span class="line">    <span class="keyword">if</span> (state <span class="keyword">is</span> CompletedExceptionally) <span class="keyword">throw</span> recoverStackTrace(state.cause, <span class="keyword">this</span>)</span><br><span class="line">    <span class="comment">// if the parent job was already cancelled, then throw the corresponding cancellation exception</span></span><br><span class="line">    <span class="comment">// otherwise, there is a race is suspendCancellableCoroutine &#123; cont -&gt; ... &#125; does cont.resume(...)</span></span><br><span class="line">    <span class="comment">// before the block returns. This getResult would return a result as opposed to cancellation</span></span><br><span class="line">    <span class="comment">// exception that should have happened if the continuation is dispatched for execution later.</span></span><br><span class="line">    <span class="keyword">if</span> (resumeMode == MODE_CANCELLABLE) &#123;</span><br><span class="line">        <span class="keyword">val</span> job = context[Job]</span><br><span class="line">        <span class="keyword">if</span> (job != <span class="literal">null</span> &amp;&amp; !job.isActive) &#123;</span><br><span class="line">            <span class="keyword">val</span> cause = job.getCancellationException()</span><br><span class="line">            cancelResult(state, cause)</span><br><span class="line">            <span class="keyword">throw</span> recoverStackTrace(cause, <span class="keyword">this</span>)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> getSuccessfulResult(state)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 方法的状态</span></span><br><span class="line"><span class="keyword">private</span> const <span class="keyword">val</span> UNDECIDED = <span class="number">0</span></span><br><span class="line"><span class="keyword">private</span> const <span class="keyword">val</span> SUSPENDED = <span class="number">1</span></span><br><span class="line"><span class="keyword">private</span> const <span class="keyword">val</span> RESUMED = <span class="number">2</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">val</span> _decision = atomic(UNDECIDED)</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">fun</span> <span class="title">trySuspend</span><span class="params">()</span></span>: <span class="built_in">Boolean</span> &#123;</span><br><span class="line">    <span class="comment">// 轮询方法的状态</span></span><br><span class="line">    _decision.loop &#123; decision -&gt;</span><br><span class="line">            <span class="keyword">when</span> (decision) &#123;</span><br><span class="line">                <span class="comment">//没有决定,第一次肯定返回true</span></span><br><span class="line">                UNDECIDED -&gt; <span class="keyword">if</span> (<span class="keyword">this</span>._decision.compareAndSet(UNDECIDED, SUSPENDED)) <span class="keyword">return</span> <span class="literal">true</span></span><br><span class="line">                RESUMED -&gt; <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">                <span class="keyword">else</span> -&gt; error(<span class="string">"Already suspended"</span>)</span><br><span class="line">            &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://cdn.nlark.com/yuque/0/2020/png/2708149/1606532891339-f6cbef21-e46e-49da-8251-09d327596b5a.png" alt="image.png"></p>
+<p>图示</p>
+<p><img src="https://cdn.nlark.com/yuque/0/2020/png/2708149/1606531629684-1570739c-4c8f-4da9-862d-69aa63bcb68d.png?x-oss-process=image%2Fresize%2Cw_1500" alt="image.png"></p>
+<h1 id="协程的应用"><a href="#协程的应用" class="headerlink" title="协程的应用"></a>协程的应用</h1><blockquote>
+<p>如何让一个普通函数成为一个挂起函数，即让调用方以一个同步的方式拿到调用结果</p>
+</blockquote>
+<h2 id="读取assets目录下的文件"><a href="#读取assets目录下的文件" class="headerlink" title="读取assets目录下的文件"></a>读取assets目录下的文件</h2><p>以同步的形式拿到返回值</p>
+<h3 id="suspendCancellableCoroutine"><a href="#suspendCancellableCoroutine" class="headerlink" title="suspendCancellableCoroutine"></a>suspendCancellableCoroutine</h3><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">object</span> CoroutineScene3 &#123;</span><br><span class="line">    suspend <span class="function"><span class="keyword">fun</span> <span class="title">parseAssetsFile</span><span class="params">(assetManager: <span class="type">AssetManager</span>, fileName: <span class="type">String</span>)</span></span>: String &#123;</span><br><span class="line">       <span class="comment">// suspendCoroutine&lt;&gt; &#123;  &#125;</span></span><br><span class="line">        <span class="keyword">return</span> suspendCancellableCoroutine &#123; continuation -&gt;</span><br><span class="line">            Thread(Runnable &#123;</span><br><span class="line">                <span class="keyword">val</span> inputStream = assetManager.<span class="keyword">open</span>(fileName)</span><br><span class="line">                <span class="keyword">val</span> br = BufferedReader(InputStreamReader(inputStream))</span><br><span class="line">                <span class="keyword">var</span> line: String?</span><br><span class="line">                <span class="keyword">var</span> stringBuilder = StringBuilder()</span><br><span class="line"></span><br><span class="line"><span class="comment">//               while ((line=br.readLine())!=null)&#123;</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">//               &#125;</span></span><br><span class="line"></span><br><span class="line">                <span class="keyword">do</span> &#123;</span><br><span class="line">                    line = br.readLine()</span><br><span class="line">                    <span class="keyword">if</span> (line != <span class="literal">null</span>) stringBuilder.append(line) <span class="keyword">else</span> <span class="keyword">break</span></span><br><span class="line">                &#125; <span class="keyword">while</span> (<span class="literal">true</span>)</span><br><span class="line"></span><br><span class="line">                inputStream.close()</span><br><span class="line">                br.close()</span><br><span class="line"></span><br><span class="line">                Thread.sleep(<span class="number">2000</span>)</span><br><span class="line"></span><br><span class="line">                Log.e(<span class="string">"coroutine"</span>, <span class="string">"parseassetsfile completed"</span>)</span><br><span class="line">                continuation.resumeWith(Result.success(stringBuilder.toString()))</span><br><span class="line">            &#125;).start()</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以同步的方式调用</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> content = CoroutineScene3.parseAssetsFile(assets, <span class="string">"config.json"</span>)</span><br></pre></td></tr></table></figure>
+<h1 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h1><ol>
+<li>kotlin协程的核心是线程的挂起和恢复，挂起和恢复的核心是 return - callback</li>
+<li>suspend本质就是一个提醒，在反编译成java代码后会添加一个回调Continuation</li>
+<li>协程的非阻塞挂起实质上是以非阻塞式的形式写出了阻塞式的代码</li>
+<li>让一个普通函数成为一个挂起函数</li>
+</ol>
+
+    </article>
+    <!-- license  -->
+    
+        <div class="license-wrapper">
+            <p>原文作者：<a href="http://sunxin.tech">Sun xin</a>
+            <p>原文链接：<a href="http://sunxin.tech/2020/12/11/Kotlin协程实现分析/">http://sunxin.tech/2020/12/11/Kotlin协程实现分析/</a>
+            <p>发表日期：<a href="http://sunxin.tech/2020/12/11/Kotlin协程实现分析/">December 11th 2020, 9:40:52 am</a>
+            <p>更新日期：<a href="http://sunxin.tech/2020/12/11/Kotlin协程实现分析/">December 11th 2020, 9:46:19 am</a>
+            <!-- <p>版权声明：本文采用<a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">知识共享署名-非商业性使用 4.0 国际许可协议</a>进行许可</p> -->
+        </div>
+    
+    <!-- paginator  -->
+    <ul class="post-paginator">
+        <li class="next">
+            
+        </li>
+        <li class="previous">
+            
+                <div class="prevSlogan">Previous Post</div>
+                <a href= "/2020/12/10/PlantUML绘制类图6大关系记录/" title= "PlantUML绘制类图关系记录">
+                    <div class="prevTitle">PlantUML绘制类图关系记录</div>
+                </a>
+            
+        </li>
+    </ul>
+    <!-- 评论插件 -->
+    <!-- 来必力City版安装代码 -->
+
+<!-- City版安装代码已完成 -->
+    
+    
+    <!-- partial('_partial/comment/changyan') -->
+    <!--PC版-->
+
+
+    
+    
+
+    <!-- 评论 -->
+</main>
+            <!-- profile -->
+            
+        </div>
+        <footer class="footer footer-unloaded">
+    <!-- social  -->
+    
+    <div class="social">
+        
+    
+        
+            
+                <a href="mailto:sunxin0630@gmail.com" class="iconfont-archer email" title=email ></a>
+            
+        
+    
+        
+            
+                <a href="//github.com/sun0630" class="iconfont-archer github" target="_blank" title=github></a>
+            
+        
+    
+        
+            
+                <span class="iconfont-archer wechat" title=wechat>
+                  
+                  <img class="profile-qr" src="/assets/wechat_qr.png" />
+                </span>
+            
+        
+    
+        
+    
+        
+    
+        
+            
+                <a href="//weibo.com/2719076927/profile?rightmod=1&wvr=6&mod=personinfo&is_all=1" class="iconfont-archer weibo" target="_blank" title=weibo></a>
+            
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+    </div>
+    
+    <!-- powered by Hexo  -->
+    <div class="copyright">
+        <span id="hexo-power">Powered by <a href="https://hexo.io/" target="_blank">Hexo</a></span><span class="iconfont-archer power">&#xe635;</span><span id="theme-info">theme <a href="https://github.com/fi3ework/hexo-theme-archer" target="_blank">Archer</a></span>
+    </div>
+    <!-- 不蒜子  -->
+    
+    <div class="busuanzi-container">
+    
+     
+    <span id="busuanzi_container_site_pv">PV: <span id="busuanzi_value_site_pv"></span> :)</span>
+    
+    </div>
+    
+</footer>
+    </div>
+    <!-- toc -->
+    
+    <div class="toc-wrapper" style=
+    
+
+
+
+
+
+
+
+top:50vh;
+
+    >
+        <div class="toc-catalog">
+            <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
+        </div>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Kotlin协程实现分析"><span class="toc-number">1.</span> <span class="toc-text">Kotlin协程实现分析</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#协程的创建与启动"><span class="toc-number">2.</span> <span class="toc-text">协程的创建与启动</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#CoroutineContext"><span class="toc-number">2.1.</span> <span class="toc-text">CoroutineContext</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CoroutineStart"><span class="toc-number">2.2.</span> <span class="toc-text">CoroutineStart</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#协程调度器"><span class="toc-number">3.</span> <span class="toc-text">协程调度器</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#协程挂起与恢复原理"><span class="toc-number">4.</span> <span class="toc-text">协程挂起与恢复原理</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#挂起函数"><span class="toc-number">4.1.</span> <span class="toc-text">挂起函数</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#协程的应用"><span class="toc-number">5.</span> <span class="toc-text">协程的应用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#读取assets目录下的文件"><span class="toc-number">5.1.</span> <span class="toc-text">读取assets目录下的文件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#suspendCancellableCoroutine"><span class="toc-number">5.1.1.</span> <span class="toc-text">suspendCancellableCoroutine</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#小结"><span class="toc-number">6.</span> <span class="toc-text">小结</span></a></li></ol>
+    </div>
+    
+    <div class="back-top iconfont-archer">&#xe639;</div>
+    <div class="sidebar sidebar-hide">
+    <ul class="sidebar-tabs sidebar-tabs-active-0">
+        <li class="sidebar-tab-archives"><span class="iconfont-archer">&#xe67d;</span><span class="tab-name">Archive</span></li>
+        <li class="sidebar-tab-tags"><span class="iconfont-archer">&#xe61b;</span><span class="tab-name">Tag</span></li>
+        <li class="sidebar-tab-categories"><span class="iconfont-archer">&#xe666;</span><span class="tab-name">Cate</span></li>
+    </ul>
+    <div class="sidebar-content sidebar-content-show-archive">
+          <div class="sidebar-panel-archives">
+    <!-- 在ejs中将archive按照时间排序 -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <div class="total-and-search">
+        <div class="total-archive">
+        Total : 32
+        </div>
+        <!-- search  -->
+        
+    </div>
+    
+    <div class="post-archive">
+    
+    
+    
+    
+    <div class="archive-year"> 2019 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">11/26</span><a class="archive-post-title" href= "/2019/11/26/Activity 的启动流程源码分析/" >Activity 的启动流程源码分析（Android 9.0）</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2018/09/08/Android性能优化/" >Android性能优化</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2018/09/08/ArrayList (JDK8) 源码解析/" >ArrayList (JDK8) 源码解析</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2018/09/08/Bitmap的加载和Cache/" >Bitmap的加载与缓存策略</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> 2020 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/11</span><a class="archive-post-title" href= "/2020/12/11/Kotlin协程实现分析/" >Kotlin协程实现分析</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/10</span><a class="archive-post-title" href= "/2020/12/10/PlantUML绘制类图6大关系记录/" >PlantUML绘制类图关系记录</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/29</span><a class="archive-post-title" href= "/2020/09/29/关于Handler的一些问题/" >关于Handler的一些问题</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> 2019 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">07/22</span><a class="archive-post-title" href= "/2019/07/22/噩梦小记/" >噩梦小记</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">07/22</span><a class="archive-post-title" href= "/2019/07/22/今天/" >今天</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> 2018 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">10/25</span><a class="archive-post-title" href= "/2018/10/25/谈谈TCP协议的三次握手和四次挥手/" >谈谈TCP协议的三次握手和四次挥手</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">10/24</span><a class="archive-post-title" href= "/2018/10/24/Http协议/" >Http协议了解多少</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">10/09</span><a class="archive-post-title" href= "/2018/10/09/Android的线程和线程池知多少/" >Android的线程和线程池知多少</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/08</span><a class="archive-post-title" href= "/2018/09/08/装饰设计模式/" >装饰设计模式</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/08</span><a class="archive-post-title" href= "/2018/09/08/自定义View-字体变色/" >自定义View - 一个文字两种颜色</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/08</span><a class="archive-post-title" href= "/2018/09/08/构建全局的异常捕捉类/" >Android-构建全局的异常捕捉类</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/08</span><a class="archive-post-title" href= "/2018/09/08/我叫兹拉坦/" >我叫兹拉坦，Who the hell are you?</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/08</span><a class="archive-post-title" href= "/2018/09/08/代理设计模式/" >代理设计模式</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/08</span><a class="archive-post-title" href= "/2018/09/08/从源码角度分析ScrollView嵌套ListView显示不全的问题/" >从源码角度分析SrcollView嵌套ListView显示不全的问题</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/08</span><a class="archive-post-title" href= "/2018/09/08/不可思议，但这就是足球/" >不可思议，但这就是足球</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/08</span><a class="archive-post-title" href= "/2018/09/08/上传emoji表情到服务器的问题/" >Android-上传Emoji表情到服务器的问题</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/08</span><a class="archive-post-title" href= "/2018/09/08/MVP模式-小案例/" >Android - MVP模式小试</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/08</span><a class="archive-post-title" href= "/2018/09/08/LinkedList (JDK8) 源码解析/" >LinkedList (JDK8) 源码解析</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/08</span><a class="archive-post-title" href= "/2018/09/08/Kotlin基础-类与属性/" >Kotlin基础-类和属性</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/08</span><a class="archive-post-title" href= "/2018/09/08/JavaScript学习笔记02/" >JavaScript学习笔记02_函数</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">03/06</span><a class="archive-post-title" href= "/2018/03/06/Android的消息机制/" >Android消息机制源码分析</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2018/09/08/Builder(建造者)设计模式/" >建造者(Builder)设计模式</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> 2018 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/08</span><a class="archive-post-title" href= "/2018/09/08/Kotlin基础-变量与函数/" >Kotlin基础-函数和变量</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/08</span><a class="archive-post-title" href= "/2018/09/08/JavaScript学习笔记01/" >JavaScript学习笔记01_基础语法</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2018/09/08/Git使用/" >Git学习</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2018/09/08/EventBus3.1.1 源码分析/" >EventBus 3.1.1 源码分析</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2018/09/08/getView方法中为View设置监听position错乱的问题/" >Android-解决ListView的getView()方法中View设置监听position错乱的问题</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2019/07/22/噩梦小记2/" >噩梦小记2</a>
+        </li>
+    
+    </div>
+  </div>
+        <div class="sidebar-panel-tags">
+    <div class="sidebar-tags-name">
+    
+        <span class="sidebar-tag-name" data-tags="源码分析"><span class="iconfont-archer">&#xe606;</span>源码分析</span>
+    
+        <span class="sidebar-tag-name" data-tags="开发艺术探索"><span class="iconfont-archer">&#xe606;</span>开发艺术探索</span>
+    
+        <span class="sidebar-tag-name" data-tags="源码"><span class="iconfont-archer">&#xe606;</span>源码</span>
+    
+        <span class="sidebar-tag-name" data-tags="开发艺术探索 源码"><span class="iconfont-archer">&#xe606;</span>开发艺术探索 源码</span>
+    
+        <span class="sidebar-tag-name" data-tags="设计模式"><span class="iconfont-archer">&#xe606;</span>设计模式</span>
+    
+        <span class="sidebar-tag-name" data-tags="JavaScript"><span class="iconfont-archer">&#xe606;</span>JavaScript</span>
+    
+        <span class="sidebar-tag-name" data-tags="协程"><span class="iconfont-archer">&#xe606;</span>协程</span>
+    
+        <span class="sidebar-tag-name" data-tags="Kotlin in Action"><span class="iconfont-archer">&#xe606;</span>Kotlin in Action</span>
+    
+        <span class="sidebar-tag-name" data-tags="Git"><span class="iconfont-archer">&#xe606;</span>Git</span>
+    
+        <span class="sidebar-tag-name" data-tags="面试"><span class="iconfont-archer">&#xe606;</span>面试</span>
+    
+        <span class="sidebar-tag-name" data-tags="Android设计模式"><span class="iconfont-archer">&#xe606;</span>Android设计模式</span>
+    
+        <span class="sidebar-tag-name" data-tags="实用"><span class="iconfont-archer">&#xe606;</span>实用</span>
+    
+        <span class="sidebar-tag-name" data-tags="个人博客"><span class="iconfont-archer">&#xe606;</span>个人博客</span>
+    
+        <span class="sidebar-tag-name" data-tags="记录"><span class="iconfont-archer">&#xe606;</span>记录</span>
+    
+        <span class="sidebar-tag-name" data-tags="随想"><span class="iconfont-archer">&#xe606;</span>随想</span>
+    
+        <span class="sidebar-tag-name" data-tags="UML"><span class="iconfont-archer">&#xe606;</span>UML</span>
+    
+        <span class="sidebar-tag-name" data-tags="感悟"><span class="iconfont-archer">&#xe606;</span>感悟</span>
+    
+        <span class="sidebar-tag-name" data-tags="踩坑实践"><span class="iconfont-archer">&#xe606;</span>踩坑实践</span>
+    
+        <span class="sidebar-tag-name" data-tags="自定义View"><span class="iconfont-archer">&#xe606;</span>自定义View</span>
+    
+    </div>
+    <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
+    <div class="tag-load-fail" style="display: none; color: #ccc; font-size: 0.6rem;">
+    缺失模块。<br/>
+    1、请确保node版本大于6.2<br/>
+    2、在博客根目录（注意不是archer根目录）执行以下命令：<br/>
+    <span style="color: #f75357; font-size: 1rem; line-height: 2rem;">npm i hexo-generator-json-content --save</span><br/>
+    3、在根目录_config.yml里添加配置：
+    <pre style="color: #787878; font-size: 0.6rem;">
+jsonContent:
+  meta: false
+  pages: false
+  posts:
+    title: true
+    date: true
+    path: true
+    text: false
+    raw: false
+    content: false
+    slug: false
+    updated: false
+    comments: false
+    link: false
+    permalink: false
+    excerpt: false
+    categories: true
+    tags: true</pre>
+    </div> 
+    <div class="sidebar-tags-list"></div>
+</div>
+        <div class="sidebar-panel-categories">
+    <div class="sidebar-categories-name">
+    
+        <span class="sidebar-category-name" data-categories="一步一步进入高级行列"><span class="iconfont-archer">&#xe60a;</span>一步一步进入高级行列</span>
+    
+        <span class="sidebar-category-name" data-categories="Android开发艺术探索"><span class="iconfont-archer">&#xe60a;</span>Android开发艺术探索</span>
+    
+        <span class="sidebar-category-name" data-categories="Java"><span class="iconfont-archer">&#xe60a;</span>Java</span>
+    
+        <span class="sidebar-category-name" data-categories="设计模式系列"><span class="iconfont-archer">&#xe60a;</span>设计模式系列</span>
+    
+        <span class="sidebar-category-name" data-categories="JavaScript"><span class="iconfont-archer">&#xe60a;</span>JavaScript</span>
+    
+        <span class="sidebar-category-name" data-categories="Kotlin"><span class="iconfont-archer">&#xe60a;</span>Kotlin</span>
+    
+        <span class="sidebar-category-name" data-categories="Git"><span class="iconfont-archer">&#xe60a;</span>Git</span>
+    
+        <span class="sidebar-category-name" data-categories="Android-三方开源库"><span class="iconfont-archer">&#xe60a;</span>Android-三方开源库</span>
+    
+        <span class="sidebar-category-name" data-categories="计算机网络"><span class="iconfont-archer">&#xe60a;</span>计算机网络</span>
+    
+        <span class="sidebar-category-name" data-categories="Android技术"><span class="iconfont-archer">&#xe60a;</span>Android技术</span>
+    
+        <span class="sidebar-category-name" data-categories="踩坑实践"><span class="iconfont-archer">&#xe60a;</span>踩坑实践</span>
+    
+        <span class="sidebar-category-name" data-categories="Life"><span class="iconfont-archer">&#xe60a;</span>Life</span>
+    
+        <span class="sidebar-category-name" data-categories="UML"><span class="iconfont-archer">&#xe60a;</span>UML</span>
+    
+        <span class="sidebar-category-name" data-categories="源码分析"><span class="iconfont-archer">&#xe60a;</span>源码分析</span>
+    
+        <span class="sidebar-category-name" data-categories="源码"><span class="iconfont-archer">&#xe60a;</span>源码</span>
+    
+        <span class="sidebar-category-name" data-categories="自定义View系列"><span class="iconfont-archer">&#xe60a;</span>自定义View系列</span>
+    
+        <span class="sidebar-category-name" data-categories="Android技术/个人博客"><span class="iconfont-archer">&#xe60a;</span>Android技术/个人博客</span>
+    
+    </div>
+    <div class="iconfont-archer sidebar-categories-empty">&#xe678;</div>
+    <div class="sidebar-categories-list"></div>
+</div>
+    </div>
+</div> 
+    <script>
+    var siteMeta = {
+        root: "/",
+        author: "Sun xin"
+    }
+</script>
+    <!-- CDN failover -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <script type="text/javascript">
+        if (typeof window.$ === 'undefined')
+        {
+            console.warn('jquery load from jsdelivr failed, will load local script')
+            document.write('<script src="/lib/jquery.min.js">\x3C/script>')
+        }
+    </script>
+    <script src="/scripts/main.js"></script>
+    <!-- algolia -->
+    
+    <!-- busuanzi  -->
+    
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+    <!-- CNZZ  -->
+    
+    </div>
+    <!-- async load share.js -->
+    
+        <script src="/scripts/share.js" async></script>    
+     
+    </body>
+</html>
+
+

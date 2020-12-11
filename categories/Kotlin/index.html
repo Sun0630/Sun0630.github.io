@@ -22,7 +22,7 @@
     <meta name="description" content="Don't lose faith.">
     <meta http-equiv="Cache-control" content="no-cache">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
-    <title>Android的线程和线程池知多少 · sunxin&#39;s Studio</title>
+    <title>sunxin&#39;s Studio</title>
     <style type="text/css">
     @font-face {
         font-family: 'Oswald-Regular';
@@ -203,23 +203,12 @@
 </head>
 
     
-        <body class="post-body">
-    
     
 <header class="header">
 
     <div class="read-progress"></div>
     <div class="header-sidebar-menu">&#xe775;</div>
     <!-- post页的toggle banner  -->
-    
-    <div class="banner">
-            <div class="blog-title">
-                <a href="/" >sunxin&#39;s Studio.</a>
-            </div>
-            <div class="post-title">
-                <a href="#" class="post-name">Android的线程和线程池知多少</a>
-            </div>
-    </div>
     
     <a class="home-link" href=/>sunxin's Studio.</a>
 </header>
@@ -231,74 +220,24 @@
 
 
 
-
-height:50vh;
 ">
     
     <!-- 主页  -->
-    
-    
-    <!-- 404页  -->
             
     <div class="site-intro-placeholder"></div>
-    <div class="site-intro-img" style="background-image: url(/intro/post-bg.jpg)"></div>
+    <div class="site-intro-img" style="background-image: url(/)"></div>
     <div class="site-intro-meta">
         <!-- 标题  -->
         <h1 class="intro-title">
             <!-- 主页  -->
-            
-            Android的线程和线程池知多少
-            <!-- 404 -->
             
         </h1>
         <!-- 副标题 -->
         <p class="intro-subtitle">
             <!-- 主页副标题  -->
             
-            
-            <!-- 404 -->
-            
         </p>
         <!-- 文章页meta -->
-        
-            <div class="post-intros">
-                <!-- 文章页标签  -->
-                
-                    <div class= post-intro-tags >
-    
-        <a class="post-tag" href="javascript:void(0);" data-tags = "开发艺术探索">开发艺术探索</a>
-    
-</div>
-                
-                
-                    <div class="post-intro-read">
-                        <span>字数统计: <span class="post-count word-count">867</span>阅读时长: <span class="post-count reading-time">3 min</span></span>
-                    </div>
-                
-                <div class="post-intro-meta">
-                    <span class="post-intro-calander iconfont-archer">&#xe676;</span>
-                    <span class="post-intro-time">2018/10/09</span>
-                    
-                    <span id="busuanzi_container_page_pv" class="busuanzi-pv">
-                        <span class="iconfont-archer">&#xe602;</span>
-                        <span id="busuanzi_value_page_pv"></span>
-                    </span>
-                    
-                    <span class="shareWrapper">
-                        <span class="iconfont-archer shareIcon">&#xe71d;</span>
-                        <span class="shareText">Share</span>
-                        <ul class="shareList">
-                            <li class="iconfont-archer share-qr" data-type="qr">&#xe75b;
-                                <div class="share-qrcode"></div>
-                            </li>
-                            <li class="iconfont-archer" data-type="weibo">&#xe619;</li>
-                            <li class="iconfont-archer" data-type="qzone">&#xe62e;</li>
-                            <li class="iconfont-archer" data-type="twitter">&#xe634;</li>
-                            <li class="iconfont-archer" data-type="facebook">&#xe67a;</li>
-                        </ul>
-                    </span>
-                </div>
-            </div>
         
     </div>
 </div>
@@ -399,92 +338,102 @@ height:50vh;
 </script>        
         <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
         <div class="container container-unloaded">
-            <main class="main post-page">
-    <article class="article-entry">
-        <h1 id="Android的线程和线程池"><a href="#Android的线程和线程池" class="headerlink" title="Android的线程和线程池"></a>Android的线程和线程池</h1><p><strong>线程角色</strong></p>
-<ul>
-<li>AsyncTask (底层用到线程池，封装了线程池和Handler)</li>
-<li>IntentService (底层直接使用线程，服务，后台线程，不容易被杀)</li>
-<li>HandlerThread  (底层直接使用线程，具有消息循环的线程)</li>
-</ul>
-<h2 id="Android中的线程形态"><a href="#Android中的线程形态" class="headerlink" title="Android中的线程形态"></a>Android中的线程形态</h2><h3 id="AsyncTask"><a href="#AsyncTask" class="headerlink" title="AsyncTask"></a>AsyncTask</h3><blockquote>
-<p>轻量级异步任务类，线程池中执行后台任务，不太适合执行特别耗时的后台任务。</p>
-</blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 输入参数 URL</span></span><br><span class="line"><span class="comment"> * 后台任务的进程参数  Integer</span></span><br><span class="line"><span class="comment"> * 后台任务的返回结果  Long</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="class"><span class="keyword">class</span> <span class="title">DownAsyncTask</span> <span class="keyword">extends</span> <span class="title">AsyncTask</span>&lt;<span class="title">URL</span>, <span class="title">Integer</span>, <span class="title">Long</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 主线程中执行，异步任务执行之前调用，做一些准备工作</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onPreExecute</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.onPreExecute();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 在线程池中执行，执行异步任务.通过publishProgress来更新任务执行进度</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> urls</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> 返回结果给#onPostExecute</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> Long <span class="title">doInBackground</span><span class="params">(URL... urls)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 主线程中执行，当后台任务执行发生改变时调用</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> values</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onProgressUpdate</span><span class="params">(Integer... values)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.onProgressUpdate(values);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 主线程中执行，异步任务执行之后调用</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> aLong</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onPostExecute</span><span class="params">(Long aLong)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.onPostExecute(aLong);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//执行异步任务</span></span><br><span class="line"><span class="keyword">new</span> DownAsyncTask().execute();</span><br></pre></td></tr></table></figure>
-<p><strong>AsyncTask在使用中的限制条件</strong></p>
-<ul>
-<li>AsyncTask类必须在主线程中加载，对戏那个必须在主线程中创建</li>
-<li>execute方法必须在UI线程中调用</li>
-<li>不要在程序中直接调用 onPreExecute(),onPostExecute(),doInBackground和onProgressUpdate()方法</li>
-<li>一个AsyncTask对象只能执行一次，即只能调用一次execute方法。否则会报出异常</li>
-</ul>
-<h4 id="AsyncTask的工作原理"><a href="#AsyncTask的工作原理" class="headerlink" title="AsyncTask的工作原理"></a>AsyncTask的工作原理</h4><h3 id="HandlerThread"><a href="#HandlerThread" class="headerlink" title="HandlerThread"></a>HandlerThread</h3><blockquote>
-<p>继承了Thread,它是一种可以使用Handler的Thread,使用Looper.prepare()来创建消息队列，使用Looper.loop()来开启消息循环。</p>
-</blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    mTid = Process.myTid();</span><br><span class="line">    Looper.prepare();</span><br><span class="line">    <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">        mLooper = Looper.myLooper();</span><br><span class="line">        notifyAll();</span><br><span class="line">    &#125;</span><br><span class="line">    Process.setThreadPriority(mPriority);</span><br><span class="line">    onLooperPrepared();</span><br><span class="line">    Looper.loop();</span><br><span class="line">    mTid = -<span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="IntentService"><a href="#IntentService" class="headerlink" title="IntentService"></a>IntentService</h3><blockquote>
-<p>特殊的Service，是一个抽象类，可用于执行后台耗时的任务，优先级比单纯的线程要高很多，不容易被系统杀死。封装了HandlerThread和Handler。</p>
-</blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// <span class="doctag">TODO:</span> It would be nice to have an option to hold a partial wakelock</span></span><br><span class="line">    <span class="comment">// during processing, and to have a static startService(Context, Intent)</span></span><br><span class="line">    <span class="comment">// method that would launch the service &amp; hand off a wakelock.</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">super</span>.onCreate();</span><br><span class="line">    HandlerThread thread = <span class="keyword">new</span> HandlerThread(<span class="string">"IntentService["</span> + mName + <span class="string">"]"</span>);</span><br><span class="line">    thread.start();</span><br><span class="line"></span><br><span class="line">    mServiceLooper = thread.getLooper();</span><br><span class="line">    mServiceHandler = <span class="keyword">new</span> ServiceHandler(mServiceLooper);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="Android中的线程池"><a href="#Android中的线程池" class="headerlink" title="Android中的线程池"></a>Android中的线程池</h2><p><strong>线程池的好处</strong></p>
-<ul>
-<li>重用池中的线程，避免线程创建和销毁的性能开销</li>
-<li>能有效控制线程池的最大并发数，避免大量的线程之间因为仙湖抢占资源而导致的阻塞现象</li>
-<li>能够对线程进行简单的管理</li>
-</ul>
-<p><strong>手动创建线程池</strong></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * cpu核心数</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> CPU_COUNT = Runtime.getRuntime().availableProcessors();</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 线程池的核心线程数，默认核心线程会在线程池中一直存活</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> CORE_POOL_SIZE = Math.max(<span class="number">2</span>, Math.min(CPU_COUNT - <span class="number">1</span>, <span class="number">4</span>));</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 线程池所能容纳的最大线程数  </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> MAXIMUM_POOL_SIZE = CPU_COUNT * <span class="number">2</span> + <span class="number">1</span>;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 非核心线程闲置时的超时时长，超过的非核心线程会被回收</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> KEEP_ALIVE_SECONDS = <span class="number">30</span>;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 线程工厂，为线程池提供创建新线程的功能</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> ThreadFactory sThreadFactory = <span class="keyword">new</span> ThreadFactory() &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> AtomicInteger mCount = <span class="keyword">new</span> AtomicInteger(<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Thread <span class="title">newThread</span><span class="params">(Runnable r)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> Thread(r, <span class="string">"ThreadUtil #"</span> + mCount.getAndIncrement());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 线程池中的任务队列，通过线程池的execute方法提交的Runnable对象会存储在这个参数中</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> BlockingQueue&lt;Runnable&gt; sPoolWorkQueue =</span><br><span class="line">        <span class="keyword">new</span> LinkedBlockingQueue&lt;Runnable&gt;(<span class="number">128</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> Executor executor = <span class="keyword">new</span> ThreadPoolExecutor(</span><br><span class="line">        CORE_POOL_SIZE,</span><br><span class="line">        MAXIMUM_POOL_SIZE,</span><br><span class="line">        KEEP_ALIVE_SECONDS,</span><br><span class="line">        TimeUnit.SECONDS,</span><br><span class="line">        sPoolWorkQueue,</span><br><span class="line">        sThreadFactory);</span><br></pre></td></tr></table></figure>
-<h3 id="线程池的分类"><a href="#线程池的分类" class="headerlink" title="线程池的分类"></a>线程池的分类</h3><ol>
-<li>FixedThreadPool</li>
-<li>CachedThreadPool</li>
-<li>ScheduledThreadPool</li>
-<li>SingleThreadExecutor</li>
-</ol>
-
-    </article>
-    <!-- license  -->
+            <main class="main index-page">
     
-        <div class="license-wrapper">
-            <p>原文作者：<a href="http://sunxin.tech">Sun xin</a>
-            <p>原文链接：<a href="http://sunxin.tech/2018/10/09/Android的线程和线程池知多少/">http://sunxin.tech/2018/10/09/Android的线程和线程池知多少/</a>
-            <p>发表日期：<a href="http://sunxin.tech/2018/10/09/Android的线程和线程池知多少/">October 9th 2018, 9:44:17 am</a>
-            <p>更新日期：<a href="http://sunxin.tech/2018/10/09/Android的线程和线程池知多少/">October 9th 2018, 9:44:17 am</a>
-            <!-- <p>版权声明：本文采用<a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">知识共享署名-非商业性使用 4.0 国际许可协议</a>进行许可</p> -->
+    
+    
+    
+    
+    
+    <article class="index-post">
+        <a class="abstract-title" href = "/2020/12/11/Kotlin协程实现分析/" >
+            
+                <span>Kotlin协程实现分析</span>
+        </a>
+        <div class="abstract-content">
+            Kotlin协程实现分析
+协程的创建与启动
+协程调度器都有哪些，分别表示什么含义
+delay既然是IO异步任务，是怎么做到延迟协程的代码向下执行的
+suspend关键字的作用
+并发流程控制 as...
         </div>
+        <div class="abstract-post-meta">
+            <!-- date  -->
+            <div class="abstract-date">
+                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2020/12/11</span>
+            </div>
+            <!-- tags  -->
+            
+            <div class= abstract-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "协程">协程</a>
+    
+</div>
+            
+        </div>
+    </article>
+    
+    
+    
+    
+    
+    
+    <article class="index-post">
+        <a class="abstract-title" href = "/2018/09/08/Kotlin基础-类与属性/" >
+            
+                <span>Kotlin基础-类和属性</span>
+        </a>
+        <div class="abstract-content">
+            Kotlin基础-类和属性Java定义一个Person类123456789101112/*java*/public class Person &#123;    private String n...
+        </div>
+        <div class="abstract-post-meta">
+            <!-- date  -->
+            <div class="abstract-date">
+                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2018/09/08</span>
+            </div>
+            <!-- tags  -->
+            
+            <div class= abstract-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "Kotlin in Action">Kotlin in Action</a>
+    
+</div>
+            
+        </div>
+    </article>
+    
+    
+    
+    
+    
+    
+    <article class="index-post">
+        <a class="abstract-title" href = "/2018/09/08/Kotlin基础-变量与函数/" >
+            
+                <span>Kotlin基础-函数和变量</span>
+        </a>
+        <div class="abstract-content">
+            Kotlin基础-函数和变量2.1 Hello World123fun main(args: Array&lt;String&gt;): Unit &#123;    println(&quot...
+        </div>
+        <div class="abstract-post-meta">
+            <!-- date  -->
+            <div class="abstract-date">
+                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2018/09/08</span>
+            </div>
+            <!-- tags  -->
+            
+            <div class= abstract-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "Kotlin in Action">Kotlin in Action</a>
+    
+</div>
+            
+        </div>
+    </article>
     
     <!-- paginator  -->
-    <ul class="post-paginator">
-        <li class="next">
-            
-                <div class="nextSlogan">Next Post</div>
-                <a href= "/2018/10/24/Http协议/" title= "Http协议了解多少">
-                    <div class="nextTitle">Http协议了解多少</div>
-                </a>
-            
-        </li>
-        <li class="previous">
-            
-                <div class="prevSlogan">Previous Post</div>
-                <a href= "/2018/09/08/装饰设计模式/" title= "装饰设计模式">
-                    <div class="prevTitle">装饰设计模式</div>
-                </a>
-            
-        </li>
-    </ul>
-    <!-- 评论插件 -->
-    <!-- 来必力City版安装代码 -->
-
-<!-- City版安装代码已完成 -->
     
-    
-    <!-- partial('_partial/comment/changyan') -->
-    <!--PC版-->
-
-
-    
-    
-
-    <!-- 评论 -->
 </main>
             <!-- profile -->
             
@@ -573,24 +522,6 @@ height:50vh;
 </footer>
     </div>
     <!-- toc -->
-    
-    <div class="toc-wrapper" style=
-    
-
-
-
-
-
-
-
-top:50vh;
-
-    >
-        <div class="toc-catalog">
-            <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
-        </div>
-        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Android的线程和线程池"><span class="toc-number">1.</span> <span class="toc-text">Android的线程和线程池</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Android中的线程形态"><span class="toc-number">1.1.</span> <span class="toc-text">Android中的线程形态</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#AsyncTask"><span class="toc-number">1.1.1.</span> <span class="toc-text">AsyncTask</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#AsyncTask的工作原理"><span class="toc-number">1.1.1.1.</span> <span class="toc-text">AsyncTask的工作原理</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#HandlerThread"><span class="toc-number">1.1.2.</span> <span class="toc-text">HandlerThread</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#IntentService"><span class="toc-number">1.1.3.</span> <span class="toc-text">IntentService</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Android中的线程池"><span class="toc-number">1.2.</span> <span class="toc-text">Android中的线程池</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#线程池的分类"><span class="toc-number">1.2.1.</span> <span class="toc-text">线程池的分类</span></a></li></ol></li></ol></li></ol>
-    </div>
     
     <div class="back-top iconfont-archer">&#xe639;</div>
     <div class="sidebar sidebar-hide">
@@ -1408,8 +1339,6 @@ jsonContent:
     
     </div>
     <!-- async load share.js -->
-    
-        <script src="/scripts/share.js" async></script>    
      
     </body>
 </html>
